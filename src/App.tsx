@@ -1,5 +1,7 @@
 import {useEffect,useState,useCallback} from 'react'
 import {sb} from './supabase'
+import {Icon} from './icons'
+import {ThemePicker} from './theme'
 import {Budget,Report,More,runRecurring} from './Extra'
 const rp=(n:number)=>'Rp'+new Intl.NumberFormat('id-ID').format(n||0)
 const tgl=(d:string)=>new Date(d+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})
@@ -86,7 +88,7 @@ function Shell({uid}:{uid:string}){
   const addCat=async()=>{if(!nn.trim())return;const {data:f}=await sb.rpc('current_family_id');await sb.from('categories').insert({family_id:f,name:nn.trim(),type:nt});setNn('');load()}
   const renCat=async(c:any)=>{const n=prompt('nama baru',c.name);if(n?.trim()){await sb.from('categories').update({name:n.trim()}).eq('id',c.id);load()}}
   const delCat=async(c:any)=>{if(confirm('hapus kategori ini? transaksinya tetap ada')){await sb.from('categories').delete().eq('id',c.id);load()}}
-  return <div className="max-w-md mx-auto pb-28 p-4 space-y-4">
+  return <div className="max-w-md mx-auto pb-44 p-4 space-y-4">
     {tab==='beranda'&&<>
       <div className="flex justify-between items-center"><h1 className="text-xl font-semibold">{fam.name}</h1><button className="text-sm text-zinc-500" onClick={()=>sb.auth.signOut()}>keluar</button></div>
       <div className={card}><div className="text-sm text-zinc-500">sisa uang</div><div className="text-4xl font-semibold">{rp(sisa)}</div></div>
@@ -106,14 +108,16 @@ function Shell({uid}:{uid:string}){
     {tab==='anggaran'&&<Budget cats={cats} tx={tx}/>}
     {tab==='laporan'&&<Report cats={cats} tx={tx}/>}
     {tab==='lainnya'&&<>
+      <ThemePicker/>
       <div className="flex gap-2"><input className={inp} placeholder="kategori baru" value={nn} onChange={e=>setNn(e.target.value)}/>
         <select className="rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent p-3" value={nt} onChange={e=>setNt(e.target.value)}><option value="expense">keluar</option><option value="income">masuk</option></select></div>
       <button className={btn} onClick={addCat}>tambah</button>
       {cats.map(c=><div key={c.id} className="flex justify-between py-2 border-b border-zinc-100 dark:border-zinc-800"><span>{c.name} <span className="text-xs text-zinc-500">{c.type==='income'?'masuk':'keluar'}</span></span>
         <span className="space-x-3 text-sm"><button className="text-blue-600" onClick={()=>renCat(c)}>ubah</button><button className="text-rose-600" onClick={()=>delCat(c)}>hapus</button></span></div>)}<More cats={cats}/></>}
-    <button onClick={()=>setAdd(true)} aria-label="tambah transaksi" className="fixed right-5 bottom-20 w-14 h-14 rounded-full bg-blue-600 text-white text-3xl z-10">+</button>
-    <nav className="fixed bottom-0 inset-x-0 bg-white dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-800 grid grid-cols-5 pb-[env(safe-area-inset-bottom)]">
-      {[['beranda','beranda'],['transaksi','transaksi'],['anggaran','anggaran'],['laporan','laporan'],['lainnya','lainnya']].map(([v,l])=><button key={v} onClick={()=>setTab(v)} className={'p-3 text-sm '+(tab===v?'text-blue-600 font-medium':'text-zinc-500')}>{l}</button>)}</nav>
+    <button onClick={()=>setAdd(true)} aria-label="tambah transaksi" className="fixed right-5 bottom-28 w-16 h-16 rounded-full bg-blue-600 text-white z-10 flex items-center justify-center active:scale-95"><Icon n="plus" s={30}/></button>
+    <nav className="fixed bottom-0 inset-x-0 z-10 bg-white/95 dark:bg-zinc-900/95 backdrop-blur border-t border-zinc-200 dark:border-zinc-800 rounded-t-3xl grid grid-cols-5 px-2 pt-2 pb-[max(env(safe-area-inset-bottom),10px)]">
+      {[['beranda','beranda','home'],['transaksi','transaksi','swap'],['anggaran','anggaran','pie'],['laporan','laporan','chart'],['lainnya','lainnya','grid']].map(([v,l,i])=><button key={v} onClick={()=>setTab(v)} className={'flex flex-col items-center gap-1 py-1 '+(tab===v?'text-blue-600 dark:text-blue-400 font-semibold':'text-zinc-500 font-medium')}>
+        <span className={'rounded-full px-5 py-1.5 transition-colors '+(tab===v?'bg-blue-100 dark:bg-blue-950':'')}><Icon n={i} s={26}/></span><span className="text-xs">{l}</span></button>)}</nav>
     {add&&<AddTx uid={uid} cats={cats} onClose={(ok:boolean)=>{setAdd(false);ok&&load()}}/>}
   </div>}
 
