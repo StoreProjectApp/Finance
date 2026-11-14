@@ -5,7 +5,7 @@ export function applyMode(m:Mode){
   try{localStorage.setItem('mode',m)}catch{}
   const dark=m==='dark'||(m==='auto'&&matchMedia('(prefers-color-scheme: dark)').matches)
   document.documentElement.classList.toggle('dark',dark)
-  document.querySelector('meta[name=theme-color]')?.setAttribute('content',dark?'#0b0b0d':'#ffffff')}
+  document.querySelector('meta[name=theme-color]')?.setAttribute('content',dark?'#0b0b0d':'#f3f2ee')}
 export function ThemePicker(){
   const [m,setM]=useState<Mode>(getMode())
   return <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 p-4 space-y-2">

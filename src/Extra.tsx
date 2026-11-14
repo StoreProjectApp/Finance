@@ -1,9 +1,9 @@
 import {useEffect,useState,useCallback} from 'react'
 import {sb} from './supabase'
 const rp=(n:number)=>'Rp'+new Intl.NumberFormat('id-ID').format(n||0)
-const inp='w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent p-3'
+const inp='w-full rounded-xl border border-stone-300/70 dark:border-zinc-700 bg-white/70 dark:bg-transparent p-3'
 const btn='w-full rounded-xl bg-blue-600 text-white p-3 font-medium'
-const card='rounded-2xl border border-zinc-200 dark:border-zinc-800 p-4'
+const card='rounded-2xl border border-stone-200/70 dark:border-zinc-800 bg-[#fdfcfa] dark:bg-zinc-900/50 p-4'
 const ymd=(d:Date)=>d.toLocaleDateString('sv-SE')
 const fid=async()=>(await sb.rpc('current_family_id')).data
 const num=(s:any)=>Number(String(s||'').replace(/\D/g,''))

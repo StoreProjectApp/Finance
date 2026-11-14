@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
+@theme{--color-blue-600:#4f77b5;--color-blue-100:#e8eef8;--color-emerald-600:#4a9a7d;--color-rose-600:#cc6b6b}
 :root{color-scheme:light}
 .dark{color-scheme:dark}
-body{margin:0;font-family:system-ui,sans-serif;background:#fff;color:#18181b}
+body{margin:0;font-family:system-ui,sans-serif;background:#f3f2ee;color:#2e3238}
 .dark body{background:#0b0b0d;color:#f4f4f5}
