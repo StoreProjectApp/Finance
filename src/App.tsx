@@ -1,8 +1,9 @@
 import {useEffect,useState,useCallback} from 'react'
 import {sb} from './supabase'
+import {Budget,Report,More,runRecurring} from './Extra'
 const rp=(n:number)=>'Rp'+new Intl.NumberFormat('id-ID').format(n||0)
 const tgl=(d:string)=>new Date(d+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})
-const today=()=>new Date().toISOString().slice(0,10)
+const today=()=>new Date().toLocaleDateString('sv-SE')
 const inp='w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent p-3'
 const btn='w-full rounded-xl bg-blue-600 text-white p-3 font-medium disabled:opacity-50'
 const card='rounded-2xl border border-zinc-200 dark:border-zinc-800 p-4'
@@ -71,7 +72,7 @@ function Shell({uid}:{uid:string}){
   const load=useCallback(async()=>{
     const [f,c,t]=await Promise.all([sb.from('families').select('*').single(),sb.from('categories').select('*').order('name'),sb.from('transactions').select('*').order('date',{ascending:false}).order('created_at',{ascending:false}).limit(2000)])
     setFam(f.data||{});setCats(c.data||[]);setTx(t.data||[])},[])
-  useEffect(()=>{load()},[load])
+  useEffect(()=>{runRecurring(uid).then(load)},[load])
   const cn=(id:string)=>cats.find(c=>c.id===id)?.name
   const sum=(a:any[],ty:string)=>a.filter(t=>t.type===ty).reduce((s,t)=>s+Number(t.amount),0)
   const mon=today().slice(0,7),mt=tx.filter(t=>t.date.startsWith(mon))
@@ -102,15 +103,17 @@ function Shell({uid}:{uid:string}){
       <button className="text-blue-600 text-sm" onClick={csv}>ekspor csv</button>
       <div>{filtered.map(t=><Row key={t.id} t={t} cn={cn(t.category_id)} onDel={()=>del(t)}/>)}{!filtered.length&&<p className="text-sm text-zinc-500">tidak ada transaksi</p>}</div>
       <p className="text-xs text-zinc-500">ketuk transaksi untuk menghapus</p></>}
-    {tab==='kategori'&&<>
+    {tab==='anggaran'&&<Budget cats={cats} tx={tx}/>}
+    {tab==='laporan'&&<Report cats={cats} tx={tx}/>}
+    {tab==='lainnya'&&<>
       <div className="flex gap-2"><input className={inp} placeholder="kategori baru" value={nn} onChange={e=>setNn(e.target.value)}/>
         <select className="rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent p-3" value={nt} onChange={e=>setNt(e.target.value)}><option value="expense">keluar</option><option value="income">masuk</option></select></div>
       <button className={btn} onClick={addCat}>tambah</button>
       {cats.map(c=><div key={c.id} className="flex justify-between py-2 border-b border-zinc-100 dark:border-zinc-800"><span>{c.name} <span className="text-xs text-zinc-500">{c.type==='income'?'masuk':'keluar'}</span></span>
-        <span className="space-x-3 text-sm"><button className="text-blue-600" onClick={()=>renCat(c)}>ubah</button><button className="text-rose-600" onClick={()=>delCat(c)}>hapus</button></span></div>)}</>}
+        <span className="space-x-3 text-sm"><button className="text-blue-600" onClick={()=>renCat(c)}>ubah</button><button className="text-rose-600" onClick={()=>delCat(c)}>hapus</button></span></div>)}<More cats={cats}/></>}
     <button onClick={()=>setAdd(true)} aria-label="tambah transaksi" className="fixed right-5 bottom-20 w-14 h-14 rounded-full bg-blue-600 text-white text-3xl z-10">+</button>
-    <nav className="fixed bottom-0 inset-x-0 bg-white dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-800 grid grid-cols-3 pb-[env(safe-area-inset-bottom)]">
-      {[['beranda','beranda'],['transaksi','transaksi'],['kategori','kategori']].map(([v,l])=><button key={v} onClick={()=>setTab(v)} className={'p-4 '+(tab===v?'text-blue-600 font-medium':'text-zinc-500')}>{l}</button>)}</nav>
+    <nav className="fixed bottom-0 inset-x-0 bg-white dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-800 grid grid-cols-5 pb-[env(safe-area-inset-bottom)]">
+      {[['beranda','beranda'],['transaksi','transaksi'],['anggaran','anggaran'],['laporan','laporan'],['lainnya','lainnya']].map(([v,l])=><button key={v} onClick={()=>setTab(v)} className={'p-3 text-sm '+(tab===v?'text-blue-600 font-medium':'text-zinc-500')}>{l}</button>)}</nav>
     {add&&<AddTx uid={uid} cats={cats} onClose={(ok:boolean)=>{setAdd(false);ok&&load()}}/>}
   </div>}
 
