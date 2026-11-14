@@ -122,9 +122,9 @@ function Shell({uid}:{uid:string}){
       <div className="flex justify-between items-center"><h1 className="text-xl font-semibold">{fam.name}</h1><button className="text-sm text-zinc-500" onClick={()=>sb.auth.signOut()}>keluar</button></div>
       <HeroCard amount={mk(sisa)} hide={hide} points={pts} badge={hide?'•••':(net<0?'-':'+')+jt(Math.abs(net))+' bulan ini'} onToggle={()=>{const v=!hide;setHide(v);try{localStorage.setItem('hide',v?'1':'0')}catch{}}}/>
       <div className="grid grid-cols-2 gap-3">
-        <div className={card}><div className="text-sm text-zinc-500">pemasukan bulan ini</div><div className="text-xl text-income">{mk(sum(mt,'income'))}</div></div>
-        <div className={card}><div className="text-sm text-zinc-500">pengeluaran bulan ini</div><div className="text-xl text-expense">{mk(sum(mt,'expense'))}</div></div></div>
-      <div className={card}><h2 className="font-medium mb-2">pengeluaran terbesar</h2>{top.length?top.map(([k,v]:any)=><div key={k} className="flex justify-between py-1"><span>{k}</span><span>{mk(v)}</span></div>):<p className="text-sm text-zinc-500">belum ada pengeluaran</p>}</div>
+        <div className={card}><div className="text-sm text-zinc-500">pemasukan bulan ini</div><div className="text-xl text-income">{rp(sum(mt,'income'))}</div></div>
+        <div className={card}><div className="text-sm text-zinc-500">pengeluaran bulan ini</div><div className="text-xl text-expense">{rp(sum(mt,'expense'))}</div></div></div>
+      <div className={card}><h2 className="font-medium mb-2">pengeluaran terbesar</h2>{top.length?top.map(([k,v]:any)=><div key={k} className="flex justify-between py-1"><span>{k}</span><span>{rp(v)}</span></div>):<p className="text-sm text-zinc-500">belum ada pengeluaran</p>}</div>
       <div className={card}><h2 className="font-medium">transaksi terakhir</h2>{tx.slice(0,5).map(t=><Row key={t.id} t={t} cn={cn(t.category_id)} who={who(t.member_id)} onClick={()=>setAdd(t)}/>)}</div>
       <p className="text-xs text-zinc-500">kode undangan: {fam.invite_code}</p></>}
     {tab==='transaksi'&&<>
