@@ -1,5 +1,5 @@
 # keuangan keluarga
-
+  
 ## A. coba di komputer (opsional)
 1. pasang Node.js versi LTS dari nodejs.org
 2. salin `.env.example` menjadi `.env`, isi dua nilainya dari Supabase (Project Settings > API): Project URL dan anon public key. jangan pakai service_role
