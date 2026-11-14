@@ -1,14 +1,14 @@
 import {useEffect,useState,useCallback} from 'react'
 import {sb} from './supabase'
 import {Icon} from './icons'
-import {ThemePicker} from './theme'
+import {ThemePicker,Modal} from './theme'
 import {Budget,Report,More,runRecurring} from './Extra'
 const rp=(n:number)=>'Rp'+new Intl.NumberFormat('id-ID').format(n||0)
 const tgl=(d:string)=>new Date(d+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})
 const today=()=>new Date().toLocaleDateString('sv-SE')
-const inp='w-full rounded-xl border border-stone-300/70 dark:border-zinc-700 bg-white/70 dark:bg-transparent p-3'
-const btn='w-full rounded-xl bg-blue-600 text-white p-3 font-medium disabled:opacity-50'
-const card='rounded-2xl border border-stone-200/70 dark:border-zinc-800 bg-[#fdfcfa] dark:bg-zinc-900/50 p-4'
+const inp='w-full rounded-xl border border-slate-300/70 dark:border-zinc-700 bg-white/70 dark:bg-transparent p-3'
+const btn='w-full rounded-xl text-white p-3 font-semibold active:scale-[.98] transition btn-grad disabled:opacity-50'
+const card='rounded-2xl bg-white dark:bg-[#111827] ring-1 ring-black/5 dark:ring-white/10 shadow-sm p-4'
 
 function Auth(){
   const [e,setE]=useState(''),[p,setP]=useState(''),[m,setM]=useState('masuk'),[err,setErr]=useState('')
@@ -23,7 +23,7 @@ function Auth(){
     <input className={inp} placeholder="kata sandi" type="password" value={p} onChange={x=>setP(x.target.value)}/>
     {err&&<p className="text-red-500 text-sm">{err}</p>}
     <button className={btn} onClick={go}>{m}</button>
-    <button className="w-full text-blue-600 p-2" onClick={()=>setM(m==='masuk'?'daftar':'masuk')}>{m==='masuk'?'belum punya akun? daftar':'sudah punya akun? masuk'}</button>
+    <button className="w-full text-brand-600 p-2" onClick={()=>setM(m==='masuk'?'daftar':'masuk')}>{m==='masuk'?'belum punya akun? daftar':'sudah punya akun? masuk'}</button>
   </div>}
 
 function Setup({done}:{done:()=>void}){
@@ -54,29 +54,45 @@ function AddTx({uid,cats,onClose,edit}:any){
     else{const {data:f}=await sb.rpc('current_family_id');r=await sb.from('transactions').insert({...body,family_id:f,member_id:uid})}
     r.error?setErr(r.error.message):onClose(true)}
   const rm=async()=>{if(confirm('hapus transaksi ini?')){await sb.from('transactions').delete().eq('id',edit.id);onClose(true)}}
-  return <div className="fixed inset-0 bg-black/40 flex items-end z-20" onClick={()=>onClose(false)}>
-    <div className="bg-[#faf9f6] dark:bg-zinc-900 w-full rounded-t-3xl p-5 space-y-3" onClick={e=>e.stopPropagation()}>
+  return <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-end z-20" onClick={()=>onClose(false)}>
+    <div className="bg-white dark:bg-[#111827] w-full rounded-t-3xl p-5 pb-8 space-y-3 animate-slideUp" onClick={e=>e.stopPropagation()}>
+      <div className="mx-auto h-1.5 w-10 rounded-full bg-zinc-300 dark:bg-zinc-700"/>
       <div className="grid grid-cols-2 gap-2">{[['expense','pengeluaran'],['income','pemasukan']].map(([v,l])=>
-        <button key={v} onClick={()=>{setType(v);setCat('')}} className={'rounded-xl p-2 '+(type===v?(v==='income'?'bg-emerald-600 text-white':'bg-rose-600 text-white'):'bg-zinc-100 dark:bg-zinc-800')}>{l}</button>)}</div>
+        <button key={v} onClick={()=>{setType(v);setCat('')}} className={'rounded-xl p-2 '+(type===v?(v==='income'?'bg-income text-white':'bg-expense text-white'):'bg-zinc-100 dark:bg-zinc-800')}>{l}</button>)}</div>
       <input autoFocus className={inp+' text-2xl'} placeholder="nominal" inputMode="numeric" value={amt?new Intl.NumberFormat('id-ID').format(Number(amt)):''} onChange={x=>setAmt(x.target.value.replace(/\D/g,''))}/>
-      <div className="flex flex-wrap gap-2">{list.map((c:any)=><button key={c.id} onClick={()=>setCat(c.id)} className={'rounded-full px-3 py-1 border '+(cat===c.id?'bg-blue-600 text-white border-blue-600':'border-stone-300/70 dark:border-zinc-700')}>{c.name}</button>)}</div>
+      <div className="flex flex-wrap gap-2">{list.map((c:any)=><button key={c.id} onClick={()=>setCat(c.id)} className={'rounded-full px-3 py-1 border '+(cat===c.id?'bg-brand-600 text-white border-brand-600':'border-slate-300/70 dark:border-zinc-700')}>{c.name}</button>)}</div>
       <input type="date" className={inp} value={date} onChange={x=>setDate(x.target.value)}/>
       <input className={inp} placeholder="catatan" maxLength={200} value={note} onChange={x=>setNote(x.target.value)}/>
       {err&&<p className="text-red-500 text-sm">{err}</p>}
       <button className={btn} onClick={save}>{edit?'simpan perubahan':'simpan'}</button>
-      {edit&&<button className="w-full text-rose-600 p-2" onClick={rm}>hapus transaksi</button>}
+      {edit&&<button className="w-full text-expense p-2" onClick={rm}>hapus transaksi</button>}
     </div></div>}
 
 const COL=['bg-blue-500','bg-amber-500','bg-violet-500']
+const EMO:any={gaji:'💼',lainnya:'✨',makan:'🍽️',transportasi:'🚗',listrik:'💡',internet:'📶',sekolah:'🎓',cicilan:'🏦',belanja:'🛍️',kesehatan:'💊'}
 const dayLabel=(d:string)=>d===today()?'hari ini':d===new Date(Date.now()-864e5).toLocaleDateString('sv-SE')?'kemarin':tgl(d)
 const dayTot=(a:any[])=>{const n=a.reduce((s,t)=>s+(t.type==='income'?1:-1)*Number(t.amount),0);return (n<0?'-':'+')+rp(Math.abs(n))}
-const Row=({t,cn,who,onClick}:any)=><div className="flex items-center gap-3 py-3 border-b border-zinc-100 dark:border-zinc-800 active:opacity-60" onClick={onClick}>
-  <span className={'w-8 h-8 rounded-full text-white text-xs font-semibold flex items-center justify-center shrink-0 '+(who?COL[who.i%3]:'bg-zinc-400')}>{who?who.name[0].toUpperCase():'?'}</span>
-  <div className="flex-1 min-w-0"><div className="font-medium">{cn||'tanpa kategori'}</div><div className="text-xs text-zinc-500 truncate">{t.note||tgl(t.date)}</div></div>
-  <div className={'font-medium '+(t.type==='income'?'text-emerald-600':'text-rose-600')}>{t.type==='income'?'+':'-'}{rp(t.amount)}</div></div>
+const jt=(n:number)=>n>=1e6?'Rp'+(n/1e6).toFixed(1).replace('.',',')+'jt':rp(n)
+const sparkPath=(a:number[])=>{const mn=Math.min(...a),h=Math.max(...a)-mn||1;const p=a.map((v,i)=>[i*100/(a.length-1),28-(v-mn)/h*24]);return p.map((q,i)=>i?`C${(p[i-1][0]+q[0])/2} ${p[i-1][1]} ${(p[i-1][0]+q[0])/2} ${q[1]} ${q[0]} ${q[1]}`:`M${q[0]} ${q[1]}`).join(' ')}
+const Row=({t,cn,who,onClick}:any)=>{const inc=t.type==='income';return <div className="flex items-center gap-3 py-3 border-b border-zinc-100 dark:border-white/5 active:opacity-60" onClick={onClick}>
+  <span className={'relative w-11 h-11 rounded-2xl grid place-items-center text-xl font-semibold shrink-0 '+(inc?'bg-income-bg text-income':'bg-expense-bg text-expense')}>{EMO[(cn||'').toLowerCase()]||(cn||'?')[0].toUpperCase()}
+    {who&&<span className={'absolute -bottom-1 -right-1 w-4 h-4 rounded-full ring-2 ring-white dark:ring-[#111827] text-white text-[9px] font-bold grid place-items-center '+COL[who.i%3]}>{who.name[0].toUpperCase()}</span>}</span>
+  <div className="flex-1 min-w-0"><div className="font-semibold">{cn||'tanpa kategori'}</div><div className="text-xs text-zinc-500 truncate">{t.note||tgl(t.date)}</div></div>
+  <div className="font-semibold tnum" style={{color:inc?'#0b8585':'#e05540'}}>{inc?'+':'-'}{rp(t.amount)}</div></div>}
+function HeroCard({amount,badge,hide,onToggle,points}:any){
+  return <div className="relative overflow-hidden rounded-3xl p-6 text-white" style={{background:'linear-gradient(135deg,#164a82,#1e5fa8 55%,#0ea5a5)',boxShadow:'0 20px 40px -16px rgba(30,95,168,.5)'}}>
+    <div className="absolute -top-16 -right-10 h-48 w-48 rounded-full bg-white/10 blur-2xl"/>
+    <div className="absolute -bottom-20 -left-10 h-48 w-48 rounded-full bg-teal-400/30 blur-2xl"/>
+    <div className="absolute inset-0 opacity-[.08]" style={{backgroundImage:'radial-gradient(#fff 1px,transparent 1px)',backgroundSize:'14px 14px'}}/>
+    <div className="relative">
+      <div className="flex items-center justify-between text-sm text-white/80"><span>sisa uang</span><button aria-label="sembunyikan saldo" onClick={onToggle}><Icon n={hide?'eyeoff':'eye'} s={22}/></button></div>
+      <div className="mt-1 text-[2.6rem] leading-tight font-extrabold tabular-nums">{amount}</div>
+      <div className="mt-2 inline-block rounded-full bg-white/15 px-3 py-1 text-xs font-medium tabular-nums">{badge}</div>
+      <svg viewBox="0 0 100 32" preserveAspectRatio="none" className="mt-4 h-10 w-full"><path d={points} fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" vectorEffect="non-scaling-stroke"/></svg>
+    </div></div>}
 
 function Shell({uid}:{uid:string}){
-  const [tab,setTab]=useState('beranda'),[fam,setFam]=useState<any>({}),[cats,setCats]=useState<any[]>([]),[tx,setTx]=useState<any[]>([]),[add,setAdd]=useState<any>(false),[pf,setPf]=useState<any[]>([]),[hide,setHide]=useState(()=>{try{return localStorage.getItem('hide')==='1'}catch{return false}})
+  const [tab,setTab]=useState('beranda'),[fam,setFam]=useState<any>({}),[cats,setCats]=useState<any[]>([]),[tx,setTx]=useState<any[]>([]),[add,setAdd]=useState<any>(false),[pf,setPf]=useState<any[]>([]),[mo,setMo]=useState<any>(null),[hide,setHide]=useState(()=>{try{return localStorage.getItem('hide')==='1'}catch{return false}})
   const [q,setQ]=useState(''),[from,setFrom]=useState(''),[to,setTo]=useState(''),[fc,setFc]=useState('')
   const [nn,setNn]=useState(''),[nt,setNt]=useState('expense')
   const load=useCallback(async()=>{
@@ -89,6 +105,8 @@ function Shell({uid}:{uid:string}){
   const sum=(a:any[],ty:string)=>a.filter(t=>t.type===ty).reduce((s,t)=>s+Number(t.amount),0)
   const mon=today().slice(0,7),mt=tx.filter(t=>t.date.startsWith(mon))
   const sisa=Number(fam.opening_balance||0)+sum(tx,'income')-sum(tx,'expense')
+  const net=sum(mt,'income')-sum(mt,'expense')
+  const pts=sparkPath([5,4,3,2,1,0].map(i=>{const e=new Date();e.setDate(1);e.setMonth(e.getMonth()-i+1);const k=e.toLocaleDateString('sv-SE');const b=tx.filter(t=>t.date<k);return Number(fam.opening_balance||0)+sum(b,'income')-sum(b,'expense')}))
   const top=Object.entries(mt.filter(t=>t.type==='expense').reduce((o:any,t)=>{const k=cn(t.category_id)||'tanpa kategori';o[k]=(o[k]||0)+Number(t.amount);return o},{})).sort((a:any,b:any)=>b[1]-a[1]).slice(0,5)
   const del=async(t:any)=>{if(confirm('hapus transaksi ini?')){await sb.from('transactions').delete().eq('id',t.id);load()}}
   const filtered=tx.filter(t=>(!fc||t.category_id===fc)&&(!from||t.date>=from)&&(!to||t.date<=to)&&(!q||(t.note+' '+(cn(t.category_id)||'')).toLowerCase().includes(q.toLowerCase())))
@@ -97,15 +115,15 @@ function Shell({uid}:{uid:string}){
     const rows=[['tanggal','jenis','kategori','nominal','catatan'],...filtered.map(t=>[t.date,t.type==='income'?'pemasukan':'pengeluaran',cn(t.category_id)||'',t.amount,t.note])]
     const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+rows.map(r=>r.map(esc).join(',')).join('\n')],{type:'text/csv'}));a.download='transaksi.csv';a.click()}
   const addCat=async()=>{if(!nn.trim())return;const {data:f}=await sb.rpc('current_family_id');await sb.from('categories').insert({family_id:f,name:nn.trim(),type:nt});setNn('');load()}
-  const renCat=async(c:any)=>{const n=prompt('nama baru',c.name);if(n?.trim()){await sb.from('categories').update({name:n.trim()}).eq('id',c.id);load()}}
-  const delCat=async(c:any)=>{if(confirm('hapus kategori ini? transaksinya tetap ada')){await sb.from('categories').delete().eq('id',c.id);load()}}
+  const renCat=(c:any)=>setMo({title:'ubah kategori',fields:[{label:'nama',value:c.name}],onSubmit:async(v:string[])=>{if(!v[0]?.trim())return false;await sb.from('categories').update({name:v[0].trim()}).eq('id',c.id);load()}})
+  const delCat=(c:any)=>setMo({title:'hapus kategori?',text:'transaksinya tetap ada',danger:true,onSubmit:async()=>{await sb.from('categories').delete().eq('id',c.id);load()}})
   return <div className="max-w-md mx-auto pb-44 p-4 space-y-4">
     {tab==='beranda'&&<>
       <div className="flex justify-between items-center"><h1 className="text-xl font-semibold">{fam.name}</h1><button className="text-sm text-zinc-500" onClick={()=>sb.auth.signOut()}>keluar</button></div>
-      <div className={card}><div className="flex justify-between text-sm text-zinc-500"><span>sisa uang</span><button aria-label="sembunyikan saldo" onClick={()=>{const v=!hide;setHide(v);try{localStorage.setItem('hide',v?'1':'0')}catch{}}}><Icon n={hide?'eyeoff':'eye'} s={22}/></button></div><div className="text-4xl font-semibold">{mk(sisa)}</div></div>
+      <HeroCard amount={mk(sisa)} hide={hide} points={pts} badge={hide?'•••':(net<0?'-':'+')+jt(Math.abs(net))+' bulan ini'} onToggle={()=>{const v=!hide;setHide(v);try{localStorage.setItem('hide',v?'1':'0')}catch{}}}/>
       <div className="grid grid-cols-2 gap-3">
-        <div className={card}><div className="text-sm text-zinc-500">pemasukan bulan ini</div><div className="text-xl text-emerald-600">{mk(sum(mt,'income'))}</div></div>
-        <div className={card}><div className="text-sm text-zinc-500">pengeluaran bulan ini</div><div className="text-xl text-rose-600">{mk(sum(mt,'expense'))}</div></div></div>
+        <div className={card}><div className="text-sm text-zinc-500">pemasukan bulan ini</div><div className="text-xl text-income">{mk(sum(mt,'income'))}</div></div>
+        <div className={card}><div className="text-sm text-zinc-500">pengeluaran bulan ini</div><div className="text-xl text-expense">{mk(sum(mt,'expense'))}</div></div></div>
       <div className={card}><h2 className="font-medium mb-2">pengeluaran terbesar</h2>{top.length?top.map(([k,v]:any)=><div key={k} className="flex justify-between py-1"><span>{k}</span><span>{mk(v)}</span></div>):<p className="text-sm text-zinc-500">belum ada pengeluaran</p>}</div>
       <div className={card}><h2 className="font-medium">transaksi terakhir</h2>{tx.slice(0,5).map(t=><Row key={t.id} t={t} cn={cn(t.category_id)} who={who(t.member_id)} onClick={()=>setAdd(t)}/>)}</div>
       <p className="text-xs text-zinc-500">kode undangan: {fam.invite_code}</p></>}
@@ -113,7 +131,7 @@ function Shell({uid}:{uid:string}){
       <input className={inp} placeholder="cari catatan atau kategori" value={q} onChange={e=>setQ(e.target.value)}/>
       <div className="grid grid-cols-2 gap-2"><input type="date" className={inp} value={from} onChange={e=>setFrom(e.target.value)}/><input type="date" className={inp} value={to} onChange={e=>setTo(e.target.value)}/></div>
       <select className={inp} value={fc} onChange={e=>setFc(e.target.value)}><option value="">semua kategori</option>{cats.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select>
-      <button className="text-blue-600 text-sm" onClick={csv}>ekspor csv</button>
+      <button className="text-brand-600 text-sm" onClick={csv}>ekspor csv</button>
       <div>{groups.map(([d,a]:any)=><div key={d}><div className="flex justify-between text-xs text-zinc-500 pt-4 pb-1"><span className="font-medium">{dayLabel(d)}</span><span>{dayTot(a)}</span></div>{a.map((t:any)=><Row key={t.id} t={t} cn={cn(t.category_id)} who={who(t.member_id)} onClick={()=>setAdd(t)}/>)}</div>)}{!filtered.length&&<p className="text-sm text-zinc-500 pt-4">belum ada transaksi, ketuk + untuk mulai</p>}</div>
       <p className="text-xs text-zinc-500">ketuk transaksi untuk mengubah atau menghapus</p></>}
     {tab==='anggaran'&&<Budget cats={cats} tx={tx}/>}
@@ -121,14 +139,15 @@ function Shell({uid}:{uid:string}){
     {tab==='lainnya'&&<>
       <ThemePicker/>
       <div className="flex gap-2"><input className={inp} placeholder="kategori baru" value={nn} onChange={e=>setNn(e.target.value)}/>
-        <select className="rounded-xl border border-stone-300/70 dark:border-zinc-700 bg-white/70 dark:bg-transparent p-3" value={nt} onChange={e=>setNt(e.target.value)}><option value="expense">keluar</option><option value="income">masuk</option></select></div>
+        <select className="rounded-xl border border-slate-300/70 dark:border-zinc-700 bg-white/70 dark:bg-transparent p-3" value={nt} onChange={e=>setNt(e.target.value)}><option value="expense">keluar</option><option value="income">masuk</option></select></div>
       <button className={btn} onClick={addCat}>tambah</button>
       {cats.map(c=><div key={c.id} className="flex justify-between py-2 border-b border-zinc-100 dark:border-zinc-800"><span>{c.name} <span className="text-xs text-zinc-500">{c.type==='income'?'masuk':'keluar'}</span></span>
-        <span className="space-x-3 text-sm"><button className="text-blue-600" onClick={()=>renCat(c)}>ubah</button><button className="text-rose-600" onClick={()=>delCat(c)}>hapus</button></span></div>)}<More cats={cats}/></>}
-    <button onClick={()=>setAdd(true)} aria-label="tambah transaksi" className="fixed right-5 bottom-28 w-16 h-16 rounded-full bg-blue-600 text-white z-10 flex items-center justify-center active:scale-95"><Icon n="plus" s={30}/></button>
-    <nav className="fixed bottom-0 inset-x-0 z-10 bg-[#faf9f6]/95 dark:bg-zinc-900/95 backdrop-blur border-t border-zinc-200 dark:border-zinc-800 rounded-t-3xl grid grid-cols-5 px-2 pt-2 pb-[max(env(safe-area-inset-bottom),10px)]">
-      {[['beranda','beranda','home'],['transaksi','transaksi','swap'],['anggaran','anggaran','pie'],['laporan','laporan','chart'],['lainnya','lainnya','grid']].map(([v,l,i])=><button key={v} onClick={()=>setTab(v)} className={'flex flex-col items-center gap-1 py-1 '+(tab===v?'text-blue-600 dark:text-blue-400 font-semibold':'text-zinc-500 font-medium')}>
-        <span className={'rounded-full px-5 py-1.5 transition-colors '+(tab===v?'bg-blue-100 dark:bg-blue-950':'')}><Icon n={i} s={26}/></span><span className="text-xs">{l}</span></button>)}</nav>
+        <span className="space-x-3 text-sm"><button className="text-brand-600" onClick={()=>renCat(c)}>ubah</button><button className="text-expense" onClick={()=>delCat(c)}>hapus</button></span></div>)}<More cats={cats}/></>}
+    <button onClick={()=>setAdd(true)} aria-label="tambah transaksi" className="fixed right-5 bottom-28 w-16 h-16 rounded-full btn-grad text-white z-10 flex items-center justify-center active:scale-95"><Icon n="plus" s={30}/></button>
+    <nav className="fixed bottom-0 inset-x-0 z-10 bg-white/90 dark:bg-[#111827]/90 backdrop-blur border-t border-zinc-200 dark:border-zinc-800 rounded-t-3xl grid grid-cols-5 px-2 pt-2 pb-[max(env(safe-area-inset-bottom),10px)]">
+      {[['beranda','beranda','home'],['transaksi','transaksi','swap'],['anggaran','anggaran','pie'],['laporan','laporan','chart'],['lainnya','lainnya','grid']].map(([v,l,i])=><button key={v} onClick={()=>setTab(v)} className={'flex flex-col items-center gap-1 py-1 '+(tab===v?'text-brand-600 dark:text-brand-500 font-semibold':'text-zinc-500 font-medium')}>
+        <span className={'rounded-full px-5 py-1.5 transition-colors '+(tab===v?'bg-brand-100 dark:bg-brand-600/25':'')}><Icon n={i} s={26}/></span><span className="text-xs">{l}</span></button>)}</nav>
+    {mo&&<Modal {...mo} onClose={()=>setMo(null)}/>}
     {add&&<AddTx uid={uid} cats={cats} edit={add===true?null:add} onClose={(ok:boolean)=>{setAdd(false);ok&&load()}}/>}
   </div>}
 

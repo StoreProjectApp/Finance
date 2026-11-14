@@ -1,7 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
-@theme{--color-blue-600:#4f77b5;--color-blue-100:#e8eef8;--color-emerald-600:#4a9a7d;--color-rose-600:#cc6b6b}
+@theme{
+  --font-sans:'Plus Jakarta Sans',system-ui,sans-serif;
+  --color-brand-50:#eef6ff;--color-brand-100:#d9eaff;--color-brand-500:#3b82f6;--color-brand-600:#1e5fa8;--color-brand-700:#164a82;
+  --color-income:#0b8585;--color-income-bg:#ccfbf1;--color-expense:#e05540;--color-expense-bg:#ffe4de;--color-warn:#f59e0b;
+  --animate-slideUp:slideUp .28s cubic-bezier(.2,.8,.2,1);--animate-grow:grow .6s ease-out both;--animate-growX:growX .6s ease-out both;
+  @keyframes slideUp{from{transform:translateY(100%)}to{transform:none}}
+  @keyframes grow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+  @keyframes growX{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+}
 :root{color-scheme:light}
 .dark{color-scheme:dark}
-body{margin:0;font-family:system-ui,sans-serif;background:#f3f2ee;color:#2e3238}
-.dark body{background:#0b0b0d;color:#f4f4f5}
+body{margin:0;font-family:var(--font-sans);background:#f0f4f8;color:#1f2937}
+.dark body{background:#0a0f1a;color:#f1f5f9}
+.btn-grad{background:linear-gradient(135deg,var(--color-brand-600),var(--color-brand-700));box-shadow:0 8px 20px -8px rgba(30,95,168,.55)}
+.tnum{font-variant-numeric:tabular-nums}
