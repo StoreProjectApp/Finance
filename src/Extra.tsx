@@ -69,15 +69,17 @@ export function Report({cats,tx}:any){
       <p className="text-xs text-zinc-500 mt-2">toska pemasukan, merah pengeluaran</p></div>
   </div>}
 
-function Goals(){
+function Goals({avail,onChange}:any){
   const [g,setG]=useState<any[]>([]),[mo,setMo]=useState<any>(null)
   const load=useCallback(async()=>{const {data}=await sb.from('savings_goals').select('*').order('created_at');setG(data||[])},[])
   useEffect(()=>{load()},[load])
-  const add=()=>setMo({title:'target tabungan baru',fields:[{label:'nama target',placeholder:'mis. dana darurat'},{label:'jumlah target',type:'number'}],onSubmit:async(v:string[])=>{if(!v[0]?.trim()||!num(v[1]))return false;await sb.from('savings_goals').insert({family_id:await fid(),name:v[0].trim(),target_amount:num(v[1])});load()}})
-  const dep=(x:any)=>setMo({title:'tambah dana · '+x.name,fields:[{label:'jumlah',type:'number'}],onSubmit:async(v:string[])=>{const n=num(v[0]);if(!n)return false;await sb.from('savings_goals').update({saved_amount:Number(x.saved_amount)+n}).eq('id',x.id);load()}})
-  const del=(x:any)=>setMo({title:'hapus target?',text:x.name,danger:true,onSubmit:async()=>{await sb.from('savings_goals').delete().eq('id',x.id);load()}})
-  return <Sec t="target tabungan">
-    {g.map(x=><div key={x.id} className="space-y-1"><div className="flex justify-between"><span>{x.name}</span><span className="space-x-3"><Lk onClick={()=>dep(x)}>tambah</Lk><Lk c="text-expense" onClick={()=>del(x)}>hapus</Lk></span></div>
+  const done=()=>{load();onChange?.()}
+  const add=()=>setMo({title:'target baru',fields:[{label:'nama target',placeholder:'mis. dana darurat'},{label:'jumlah target',type:'number'}],onSubmit:async(v:string[])=>{if(!v[0]?.trim()||!num(v[1]))return false;await sb.from('savings_goals').insert({family_id:await fid(),name:v[0].trim(),target_amount:num(v[1])});done()}})
+  const dep=(x:any)=>setMo({title:'sisihkan ke '+x.name,text:'saldo utama tersedia '+rp(avail),fields:[{label:'jumlah',type:'number'}],onSubmit:async(v:string[])=>{const n=num(v[0]);if(!n)return false;if(n>avail){alert('melebihi saldo utama');return false};await sb.from('savings_goals').update({saved_amount:Number(x.saved_amount)+n}).eq('id',x.id);done()}})
+  const wd=(x:any)=>setMo({title:'tarik dari '+x.name,text:'tersisih '+rp(x.saved_amount),fields:[{label:'jumlah',type:'number'}],onSubmit:async(v:string[])=>{const n=num(v[0]);if(!n)return false;if(n>Number(x.saved_amount)){alert('melebihi dana tersisih');return false};await sb.from('savings_goals').update({saved_amount:Number(x.saved_amount)-n}).eq('id',x.id);done()}})
+  const del=(x:any)=>setMo({title:'hapus target?',text:Number(x.saved_amount)>0?x.name+' · '+rp(x.saved_amount)+' dikembalikan ke saldo utama':x.name,danger:true,onSubmit:async()=>{await sb.from('savings_goals').delete().eq('id',x.id);done()}})
+  return <Sec t="dana tersisih">
+    {g.map(x=><div key={x.id} className="space-y-1"><div className="flex justify-between"><span>{x.name}</span><span className="space-x-3"><Lk onClick={()=>dep(x)}>sisihkan</Lk>{Number(x.saved_amount)>0&&<Lk onClick={()=>wd(x)}>tarik</Lk>}<Lk c="text-expense" onClick={()=>del(x)}>hapus</Lk></span></div>
       <Bar v={x.saved_amount} max={x.target_amount}/><div className="text-xs text-zinc-500">{rp(x.saved_amount)} dari {rp(x.target_amount)} ({Math.round(x.saved_amount/x.target_amount*100)}%)</div></div>)}
     <button className={btn} onClick={add}>tambah target</button>{mo&&<Modal {...mo} onClose={()=>setMo(null)}/>}</Sec>}
 
@@ -107,4 +109,4 @@ function Recurring({cats}:any){
     <button className={btn} onClick={add}>tambah</button>
     <p className="text-xs text-zinc-500">transaksi dibuat otomatis saat aplikasi dibuka pada atau setelah tanggalnya</p>{mo&&<Modal {...mo} onClose={()=>setMo(null)}/>}</Sec>}
 
-export function More({cats}:any){return <div className="space-y-3 pt-4"><Recurring cats={cats}/><Goals/><Debts/></div>}
+export function More({cats,avail,onChange}:any){return <div className="space-y-3 pt-4"><Recurring cats={cats}/><Goals avail={avail} onChange={onChange}/><Debts/></div>}

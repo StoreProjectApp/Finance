@@ -30,3 +30,13 @@ export function Modal({title,fields=[],onSubmit,onClose,danger,text}:{title:stri
       <button disabled={busy} className={'w-full rounded-xl text-white p-3 font-semibold active:scale-[.98] transition disabled:opacity-50 '+(danger?'bg-expense':'btn-grad')} onClick={go}>{danger?'hapus':'simpan'}</button>
       <button className="w-full p-2 text-zinc-500" onClick={onClose}>batal</button>
     </div></div>}
+
+export type Prefs={jenis:'all'|'income'|'expense',ikon:'emoji'|'inisial'}
+export const getPrefs=():Prefs=>{try{return {jenis:'all',ikon:'emoji',...JSON.parse(localStorage.getItem('prefs')||'{}')}}catch{return {jenis:'all',ikon:'emoji'}}}
+export const savePrefs=(p:Prefs)=>{try{localStorage.setItem('prefs',JSON.stringify(p))}catch{}}
+export function PrefsPicker({value,onChange}:{value:Prefs,onChange:(p:Prefs)=>void}){
+  const Seg=({k,opts}:{k:keyof Prefs,opts:string[][]})=><div className="flex gap-2">{opts.map(([v,l])=><button key={v} onClick={()=>{const p={...value,[k]:v} as Prefs;savePrefs(p);onChange(p)}} className={'flex-1 rounded-xl p-3 border text-sm '+(value[k]===v?'bg-brand-600 text-white border-brand-600':'border-slate-300/70 dark:border-zinc-700')}>{l}</button>)}</div>
+  return <div className="rounded-2xl bg-white dark:bg-[#111827] ring-1 ring-black/5 dark:ring-white/10 shadow-sm p-4 space-y-3">
+    <div className="font-medium">tampilan transaksi</div>
+    <div className="text-xs text-zinc-500">jenis yang ditampilkan di riwayat</div><Seg k="jenis" opts={[['all','semua'],['income','pemasukan'],['expense','pengeluaran']]}/>
+    <div className="text-xs text-zinc-500">ikon kategori</div><Seg k="ikon" opts={[['emoji','emoji'],['inisial','huruf awal']]}/></div>}
